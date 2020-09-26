@@ -78,9 +78,10 @@ function ChatTranslate()
             print(response.status)
             return
         end
-
-        --print("RAW data: ", response.body)
-        --print("Parsed data: ", inspect(data))
+            
+            --[[code below just for debug usage
+            print("RAW data: ", response.body)
+            print("Parsed data: ", inspect(data))]]--
         
         local data = json.parse(response.body)
         client.exec("say ",inspect(data.trans_result[1].dst))
