@@ -1,6 +1,6 @@
-local http = require "gamesense/http"
-local inspect = require "gamesense/inspect"
-local md5 = require "md5"
+local http = require 'gamesense/http'
+local inspect = require 'gamesense/inspect'
+local md5 = require 'md5'
 
 local function chat_print_ffi()
     -- code from Aviarita: print_to_hudchat.lua
@@ -23,7 +23,7 @@ local function chat_print_ffi()
     local hudchat = find_hud_element(hud, 'CHudChat') or error('CHudChat not found')
     local chudchat_vtbl = hudchat[0] or error('CHudChat instance vtable is nil')
     local raw_print_to_chat = chudchat_vtbl[27]
-    local print_to_chat = ffi.cast('ChatPrintf_t', raw_print_to_chat)
+    local print_to_chat = ffi.cast('ChatPrintf_t', raw_print_to_chat) --
 
     -- This list is use for specify the target language( or the source language )
     -- If translator cannot recognize your language, manually define it in line 94
@@ -43,77 +43,69 @@ local function chat_print_ffi()
     Russian: ru     Slovenian: slo	
     Spanish:spa     Swedish: swe
     Thai:th         Vietnamese: vie
-    ]] --
-
-    local function print(text) print_to_chat(hudchat, 0, 0, text) end
+    ]]
+    local function print(text)
+        print_to_chat(hudchat, 0, 0, text)
+    end
 
     return print
 end
 
 local print_to_chat = chat_print_ffi()
 
-local TargetLang = ""
-local TranslateStr = ""
+local TargetLang = ''
+local TranslateStr = ''
 
 client.set_event_callback(
-    'string_cmd', function(cmd)
+    'string_cmd',
+    function(cmd)
         repeat
             local cmd = cmd.text
 
-            if not cmd:match('^say') then break end
+            if not cmd:match('^say') then
+                break
+            end
 
             local msg = cmd:match('^say (.*)')
-            if not msg then break end
+            if not msg then
+                break
+            end
 
             if cmd:sub(5, 9) == '!tsay' then
-                if cmd:sub(13, 13) == " " then
+                if cmd:sub(13, 13) == ' ' then
                     TargetLang = cmd:sub(11, 12)
                     TranslateStr = cmd:sub(14, cmd.length)
-                    -- print_to_chat( "Command type: "..cmd:sub(5, 9) )
-                    -- print_to_chat( "Target language: "..TargetLang )
                     ChatTranslate(TargetLang, TranslateStr)
                 else
                     TargetLang = cmd:sub(11, 13)
                     TranslateStr = cmd:sub(15, cmd.length)
-                    -- print_to_chat( "Command type: "..cmd:sub(5, 9) )
-                    -- print_to_chat( "Target language: "..TargetLang )
                     ChatTranslate(TargetLang, TranslateStr)
                 end
 
                 return true
             end
-
         until true
     end
 )
 
 function ChatTranslate(TargetLang, TranslateStr)
-
-    local from = "auto"
+    local from = 'auto'
 
     -- dev app ID
-    local appid = "20200711000517176"
+    local appid = '20200711000517176'
 
     -- Random num
     local random = math.random()
     local salt = tostring(random):reverse():sub(1, 10)
 
     -- dev API key
-    local Pkey = "PQIzHcancHLCVSR6Z5UA"
+    local Pkey = 'PQIzHcancHLCVSR6Z5UA'
 
     -- how a sign group up
     local signRaw = (appid .. TranslateStr .. salt .. Pkey)
 
     -- generate sign
     local sign = md5.sumhexa(signRaw)
-
-    -- debug info
-    -- print_to_chat("App ID : "..appid)
-    -- print_to_chat("RAW text : "..TranslateStr)
-    -- print_to_chat("Random code : "..salt)
-    -- print_to_chat("API key : "..Pkey)
-    -- print_to_chat("Pre MD5 32-bit lowercase : "..signRaw)
-    -- print_to_chat("Sign : "..sign)
 
     local params = {
         q = TranslateStr,
@@ -125,21 +117,19 @@ function ChatTranslate(TargetLang, TranslateStr)
     }
 
     http.post(
-        "http://api.fanyi.baidu.com/api/trans/vip/translate", {
+        'http://api.fanyi.baidu.com/api/trans/vip/translate',
+        {
             params = params
-        }, function(success, response)
+        },
+        function(success, response)
             if not success or response.status ~= 200 then
-                client.error("Network error.")
+                client.error('Network error.')
                 print(response.status)
                 return
             end
 
-            -- print("RAW data: ", response.body)
-            -- print("Parsed data: ", inspect(data))
-
             local data = json.parse(response.body)
-            client.exec("say ", inspect(data.trans_result[1].dst))
-
+            client.exec('say ', inspect(data.trans_result[1].dst))
         end
     )
 end
